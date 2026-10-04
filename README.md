@@ -5,9 +5,66 @@ Port of the ROCKNIX stick calibration fix from
 of its left and forward edges, rest position off-center) to
 [Armada OS](https://github.com/virtudude/armada).
 
-## Install
+## Install (one line, over SSH)
 
-On the Odin 3 running Armada, as root (SSH, or Konsole in desktop mode):
+On the Odin 3 running Armada:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/aanze/fix-o3-drift/claude/busy-bardeen-htwnbi/install.sh | sudo sh
+```
+
+This installs the **Odin 3 Stick Fix** Decky plugin into
+`~armada/homebrew/plugins/odin3-stick-fix` and adds the reapply hook (see
+below). It then restarts Decky. It does not change the calibration: choose a
+preset in the plugin.
+
+To uninstall, run the command below. It leaves
+`/etc/armada/input-calibration.json` unchanged.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/aanze/fix-o3-drift/claude/busy-bardeen-htwnbi/install.sh | sudo sh -s -- --uninstall
+```
+
+## Decky plugin
+
+The panel is opened from Decky's (…) menu > Odin 3 Stick Fix.
+
+- **Presets**: apply one of the built-in presets. "aanze Odin 3 (fix ROCKNIX)"
+  holds the values below. "Défauts du driver Armada" holds ±1408 with no
+  deadzone. Your own saved presets (★) are also listed here. Applying a preset
+  writes `/etc/armada/input-calibration.json`, so it is re-applied at every
+  boot. It also writes the values to the driver and restarts InputPlumber.
+- **Anti-drift editor**: each stick has its own settings:
+  - center X/Y offset, which cancels a resting drift;
+  - deadzone;
+  - reach in each of the four directions (← → ↑ forward, ↓ back), with an
+    optional symmetric lock.
+
+  Every change is sent to the driver right away. The live preview therefore
+  shows exactly what the new values produce:
+  - the dot is the driver's output;
+  - the red bands are the deadzone;
+  - the percentages around each stick are the maximum deflection reached since
+    the last change. Orange (< 98 %) means that edge is not reached.
+
+  Nothing is saved until **Appliquer**. **Fermer** puts the previous values
+  back. **Enregistrer en preset** stores the values as a preset without
+  applying them.
+- **Tester (30 s)**: while it runs, InputPlumber holds back all controller
+  input from Steam (the same intercept mode Armada Control uses for its
+  calibration). You can move the sticks to the edges without driving the
+  menus. Stop it early with the touchscreen. It also ends on its own after
+  30 s, or 4 s after the editor stops polling.
+- **Mesurer le repos**: samples the sticks for 2 s with center and deadzone
+  at 0, so it reads the raw resting value. It then offers to set the center to
+  cancel that offset and to widen the deadzone to cover the noise plus 20.
+  Do not touch the sticks while it runs.
+
+Built files (`decky/odin3-stick-fix/dist/index.js`) are committed so the
+installer needs no Node.js on the device. To rebuild:
+`cd decky/odin3-stick-fix && npm ci && npm run build`.
+
+## Command line (without the plugin)
 
 ```sh
 curl -LO https://raw.githubusercontent.com/aanze/fix-o3-drift/claude/busy-bardeen-htwnbi/odin3-stick-fix.sh
@@ -20,6 +77,10 @@ sudo sh odin3-stick-fix.sh install
 | `apply`     | Writes the values again and applies them now. This is the ROCKNIX "Fix Sticks" tool. |
 | `status`    | Shows the stored values next to the live values. |
 | `uninstall` | Removes the hook and restores the saved file. Reboot afterwards. |
+| `hook` / `unhook` | Installs or removes the reapply hook only. |
+
+If you see `/bin/sh^M: bad interpreter`, the file picked up Windows line
+endings: run `sed -i 's/\r$//' odin3-stick-fix.sh`.
 
 Values: LX ±700, LY ±835, RX ±910, RY ±825, deadzone 70, center 0,
 triggers 1552. They come from `rsinput-cal-default` as of commit `1da7c87f46`.
@@ -71,9 +132,12 @@ analog changes at 1-count resolution (commit `475b776`), where ROCKNIX used a
 
 ```sh
 git clone --depth 1 https://github.com/virtudude/armada /tmp/armada
-sh tests/run.sh /tmp/armada
+sh tests/run.sh /tmp/armada                        # CLI, against Armada's real applier
+python3 decky/odin3-stick-fix/tests/test_backend.py  # plugin backend, fake sysfs
+cd decky/odin3-stick-fix && npm test               # editor model
 ```
 
 The test runs Armada's real `apply-input-calibration` against a fake sysfs.
 It checks the live values, the InputPlumber restart, the backup/restore, the
-udev rule and the unit. It does not replace a test on the device.
+udev rule and the unit. None of these replace a test on the device. The plugin UI only runs inside
+Steam, so it has only been type-checked and built here.

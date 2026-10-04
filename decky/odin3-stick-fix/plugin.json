@@ -1,0 +1,10 @@
+{
+  "name": "Odin 3 Stick Fix",
+  "author": "aanze",
+  "flags": ["root"],
+  "api_version": 1,
+  "publish": {
+    "tags": ["controller", "calibration"],
+    "description": "Presets de calibration et réglage anti-drift des sticks de l'AYN Odin 3 sous Armada OS."
+  }
+}

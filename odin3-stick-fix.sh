@@ -23,6 +23,8 @@
 #   odin3-stick-fix.sh status      show stored vs live values
 #   odin3-stick-fix.sh uninstall   remove the hook, restore the previous
 #                                  calibration file (takes effect at reboot)
+#   odin3-stick-fix.sh hook        install the reapply hook only (values untouched)
+#   odin3-stick-fix.sh unhook      remove the reapply hook only
 
 set -eu
 
@@ -180,6 +182,22 @@ cmd_uninstall() {
   echo "Reboot to put the live driver values back."
 }
 
+cmd_hook() {
+  check_device
+  write_hook
+  ${SYSTEMCTL} daemon-reload
+  ${UDEVADM} control --reload 2>/dev/null || true
+  echo "Reapply hook installed."
+}
+
+cmd_unhook() {
+  [ "$(id -u)" -eq 0 ] || [ -n "${ROOT}" ] || { echo "Run as root (sudo)." >&2; exit 1; }
+  rm -f "${UNIT}" "${RULE}"
+  ${SYSTEMCTL} daemon-reload
+  ${UDEVADM} control --reload 2>/dev/null || true
+  echo "Reapply hook removed."
+}
+
 cmd_status() {
   printf '%-28s %10s %10s\n' parameter stored live
   for p in axis_leftx_min axis_leftx_max axis_leftx_center axis_leftx_deadzone \
@@ -198,8 +216,10 @@ case "${1:-}" in
   apply)     cmd_apply ;;
   uninstall) cmd_uninstall ;;
   status)    cmd_status ;;
+  hook)      cmd_hook ;;
+  unhook)    cmd_unhook ;;
   *)
-    echo "usage: $0 install|apply|status|uninstall" >&2
+    echo "usage: $0 install|apply|status|uninstall|hook|unhook" >&2
     exit 2
     ;;
 esac
