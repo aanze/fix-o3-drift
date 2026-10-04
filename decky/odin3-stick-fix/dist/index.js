@@ -345,7 +345,7 @@ function Content() {
 var index = definePlugin(() => ({
     name: "Odin 3 Stick Fix",
     content: SP_JSX.jsx(Content, {}),
-    icon: (SP_JSX.jsxs("svg", { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", children: [SP_JSX.jsx("circle", { cx: "12", cy: "12", r: "9" }), SP_JSX.jsx("circle", { cx: "12", cy: "12", r: "3" }), SP_JSX.jsx("path", { d: "M12 3v3M12 18v3M3 12h3M18 12h3" })] })),
+    icon: (SP_JSX.jsxs("svg", { xmlns: "http://www.w3.org/2000/svg", width: "1em", height: "1em", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", children: [SP_JSX.jsx("circle", { cx: "12", cy: "12", r: "9" }), SP_JSX.jsx("circle", { cx: "12", cy: "12", r: "3" }), SP_JSX.jsx("path", { d: "M12 3v3M12 18v3M3 12h3M18 12h3" })] })),
 }));
 
 export { index as default };
