@@ -6,14 +6,14 @@
 # change the calibration itself: pick a preset in the plugin.
 #
 # Over SSH on the Odin 3:
-#   curl -fsSL https://raw.githubusercontent.com/aanze/fix-o3-drift/claude/busy-bardeen-htwnbi/install.sh | sudo sh
+#   curl -fsSL https://raw.githubusercontent.com/aanze/fix-o3-drift/main/install.sh | sudo sh
 # Uninstall (keeps /etc/armada/input-calibration.json as it is):
-#   curl -fsSL https://raw.githubusercontent.com/aanze/fix-o3-drift/claude/busy-bardeen-htwnbi/install.sh | sudo sh -s -- --uninstall
+#   curl -fsSL https://raw.githubusercontent.com/aanze/fix-o3-drift/main/install.sh | sudo sh -s -- --uninstall
 
 set -eu
 
 REPO="aanze/fix-o3-drift"
-REF="${REF:-claude/busy-bardeen-htwnbi}"
+REF="${REF:-main}"
 PLUGIN="odin3-stick-fix"
 
 die() { echo "Erreur : $*" >&2; exit 1; }

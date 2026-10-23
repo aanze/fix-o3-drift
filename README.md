@@ -10,7 +10,7 @@ of its left and forward edges, rest position off-center) to
 On the Odin 3 running Armada:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/aanze/fix-o3-drift/claude/busy-bardeen-htwnbi/install.sh | sudo sh
+curl -fsSL https://raw.githubusercontent.com/aanze/fix-o3-drift/main/install.sh | sudo sh
 ```
 
 This installs the **Odin 3 Stick Fix** Decky plugin into
@@ -22,7 +22,7 @@ To uninstall, run the command below. It leaves
 `/etc/armada/input-calibration.json` unchanged.
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/aanze/fix-o3-drift/claude/busy-bardeen-htwnbi/install.sh | sudo sh -s -- --uninstall
+curl -fsSL https://raw.githubusercontent.com/aanze/fix-o3-drift/main/install.sh | sudo sh -s -- --uninstall
 ```
 
 ## Decky plugin
@@ -67,7 +67,7 @@ installer needs no Node.js on the device. To rebuild:
 ## Command line (without the plugin)
 
 ```sh
-curl -LO https://raw.githubusercontent.com/aanze/fix-o3-drift/claude/busy-bardeen-htwnbi/odin3-stick-fix.sh
+curl -LO https://raw.githubusercontent.com/aanze/fix-o3-drift/main/odin3-stick-fix.sh
 sudo sh odin3-stick-fix.sh install
 ```
 
