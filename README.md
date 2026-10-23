@@ -7,22 +7,31 @@ of its left and forward edges, rest position off-center) to
 
 ## Install (one line, over SSH)
 
-On the Odin 3 running Armada:
+The repository is private, so the download needs a GitHub token. Create a
+fine-grained token at https://github.com/settings/personal-access-tokens:
+- Repository access: only `aanze/fix-o3-drift`;
+- Permissions: Contents, Read-only.
+
+Then, on the Odin 3 running Armada, paste the token when asked:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/aanze/fix-o3-drift/main/install.sh | sudo sh
+(umask 077; read -rsp 'Token GitHub : ' T && echo && printf 'Authorization: Bearer %s\n' "$T" > /tmp/gh-h) && curl -fsSL -H @/tmp/gh-h -H 'Accept: application/vnd.github.raw+json' https://api.github.com/repos/aanze/fix-o3-drift/contents/install.sh?ref=main | sudo env GITHUB_TOKEN_FILE=/tmp/gh-h sh; rm -f /tmp/gh-h
 ```
+
+The token is read without echo. It goes into a temporary header file only you
+can read, never into the shell history or a command line, and that file is
+deleted at the end.
 
 This installs the **Odin 3 Stick Fix** Decky plugin into
 `~armada/homebrew/plugins/odin3-stick-fix` and adds the reapply hook (see
 below). It then restarts Decky. It does not change the calibration: choose a
-preset in the plugin.
+preset in the plugin. Run the same line again to update.
 
-To uninstall, run the command below. It leaves
+To uninstall, run the command below. It needs no token and leaves
 `/etc/armada/input-calibration.json` unchanged.
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/aanze/fix-o3-drift/main/install.sh | sudo sh -s -- --uninstall
+sudo sh ~/homebrew/plugins/odin3-stick-fix/install.sh --uninstall
 ```
 
 ## Decky plugin
@@ -66,9 +75,10 @@ installer needs no Node.js on the device. To rebuild:
 
 ## Command line (without the plugin)
 
+The installer copies the script into the plugin folder:
+
 ```sh
-curl -LO https://raw.githubusercontent.com/aanze/fix-o3-drift/main/odin3-stick-fix.sh
-sudo sh odin3-stick-fix.sh install
+sudo sh ~/homebrew/plugins/odin3-stick-fix/odin3-stick-fix.sh install
 ```
 
 | Command     | Effect |

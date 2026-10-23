@@ -5,10 +5,12 @@
 # that re-applies the stick calibration when rsinput is reloaded. Does not
 # change the calibration itself: pick a preset in the plugin.
 #
-# Over SSH on the Odin 3:
-#   curl -fsSL https://raw.githubusercontent.com/aanze/fix-o3-drift/main/install.sh | sudo sh
-# Uninstall (keeps /etc/armada/input-calibration.json as it is):
-#   curl -fsSL https://raw.githubusercontent.com/aanze/fix-o3-drift/main/install.sh | sudo sh -s -- --uninstall
+# The repository is private: pass a GitHub token with read access to its
+# contents. Over SSH on the Odin 3 (the token is read without echo and stays
+# out of the shell history and the process list):
+#   (umask 077; read -rsp 'Token GitHub : ' T && echo && printf 'Authorization: Bearer %s\n' "$T" > /tmp/gh-h) && curl -fsSL -H @/tmp/gh-h -H 'Accept: application/vnd.github.raw+json' https://api.github.com/repos/aanze/fix-o3-drift/contents/install.sh?ref=main | sudo env GITHUB_TOKEN_FILE=/tmp/gh-h sh; rm -f /tmp/gh-h
+# Uninstall (keeps /etc/armada/input-calibration.json as it is; no token needed):
+#   sudo sh ~/homebrew/plugins/odin3-stick-fix/install.sh --uninstall
 
 set -eu
 
@@ -44,8 +46,29 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "${TMP}"' EXIT
 
 echo "Téléchargement de ${REPO}@${REF}…"
-curl -fsSL "https://codeload.github.com/${REPO}/tar.gz/refs/heads/${REF}" | tar -xz -C "${TMP}" --strip-components=1
-SRC="${TMP}/decky/${PLUGIN}"
+# GITHUB_TOKEN_FILE holds an "Authorization: Bearer <token>" header line,
+# GITHUB_TOKEN the bare token. Without either, only a public repo works.
+HEADER="${TMP}/auth-header"
+if [ -n "${GITHUB_TOKEN_FILE:-}" ]; then
+  [ -r "${GITHUB_TOKEN_FILE}" ] || die "${GITHUB_TOKEN_FILE} illisible."
+  cp "${GITHUB_TOKEN_FILE}" "${HEADER}"
+elif [ -n "${GITHUB_TOKEN:-}" ]; then
+  printf 'Authorization: Bearer %s\n' "${GITHUB_TOKEN}" > "${HEADER}"
+fi
+if [ -f "${HEADER}" ]; then
+  chmod 600 "${HEADER}"
+  # The API answers with a redirect to a short-lived codeload URL; curl does
+  # not forward the Authorization header to that other host.
+  curl -fsSL -H "@${HEADER}" -H "Accept: application/vnd.github+json" \
+    "https://api.github.com/repos/${REPO}/tarball/${REF}" > "${TMP}/repo.tgz" \
+    || die "téléchargement refusé : vérifiez le token (accès en lecture à ${REPO})."
+else
+  curl -fsSL "https://codeload.github.com/${REPO}/tar.gz/refs/heads/${REF}" > "${TMP}/repo.tgz" \
+    || die "téléchargement refusé : ${REPO} est privé, passez un token (voir l'en-tête de ce script)."
+fi
+mkdir "${TMP}/src"
+tar -xzf "${TMP}/repo.tgz" -C "${TMP}/src" --strip-components=1
+SRC="${TMP}/src/decky/${PLUGIN}"
 [ -f "${SRC}/dist/index.js" ] || die "archive incomplète (dist/index.js manquant)."
 
 rm -rf "${DEST}"
@@ -53,11 +76,11 @@ mkdir -p "${DEST}/dist"
 # Plain cp (no -a): files take the home directory's SELinux label, not /tmp's.
 cp -R "${SRC}/plugin.json" "${SRC}/package.json" "${SRC}/main.py" "${SRC}/py_modules" "${DEST}/"
 cp "${SRC}/dist/index.js" "${DEST}/dist/"
-cp "${TMP}/odin3-stick-fix.sh" "${DEST}/"
+cp "${TMP}/src/odin3-stick-fix.sh" "${TMP}/src/install.sh" "${DEST}/"
 chown -R "${USER_NAME}:${USER_NAME}" "${DEST}"
 command -v restorecon >/dev/null 2>&1 && restorecon -R "${DEST}" 2>/dev/null || true
 
-sh "${TMP}/odin3-stick-fix.sh" hook
+sh "${TMP}/src/odin3-stick-fix.sh" hook
 
 systemctl restart plugin_loader.service
 echo "Installé : ${DEST}"
